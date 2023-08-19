@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Postfix and Prefix Converter</title>
+		
+		<style>
+		
+			* {
+				box-sizing: border-box;
+			}
+		
+			.centerMe {
+				text-align: center;
+			}
+			
+			.padMe {
+				padding: 24px;
+			}
+			
+		</style>
+		
+	</head>
+	
+	<body>
+		
+		{% csrf_token %}
+		
+		<div class="centerMe padMe">
+			<input type="text" id="expressionId" name="expression" placeholder="Enter an expression here" style="width: 200px" disabled>
+			<button onclick="clearEverything()">Clear</button><br><br>
+			
+			<div class="centerMe" id="errorMessageDisplayId" style="width: 250px; height: 20px; margin: auto; background-color: #D5D5D5; border: 1px solid black; display: none;"></div>
+			<br>
+			
+			<div>
+				<button value="7" onclick="placeOutput(this)">7</button>
+				<button value="8" onclick="placeOutput(this)">8</button>
+				<button value="9" onclick="placeOutput(this)">9</button>
+			</div>
+			
+			<div>
+				<button value="4" onclick="placeOutput(this)">4</button>
+				<button value="5" onclick="placeOutput(this)">5</button>
+				<button value="6" onclick="placeOutput(this)">6</button>
+			</div>
+			
+			<div>
+				<button value="1" onclick="placeOutput(this)">1</button>
+				<button value="2" onclick="placeOutput(this)">2</button>
+				<button value="3" onclick="placeOutput(this)">3</button>
+			</div>
+			
+			<div>
+				<button value="0" onclick="placeOutput(this)">0</button>
+				<button value="<" onclick="backspace()">&lt;</button>
+			</div>
+			
+			<br>
+			
+			<div>
+				<button value="(" onclick="placeOutput(this)">(</button>
+				<button value=")" onclick="placeOutput(this)">)</button>
+				<button value="+" onclick="placeOutput(this)">+</button>
+				<button value="-" onclick="placeOutput(this)">-</button>
+				<button value="*" onclick="placeOutput(this)">*</button>
+				<button value="/" onclick="placeOutput(this)">/</button>
+				<button value="^" onclick="placeOutput(this)">^</button>
+			</div>
+			
+			<br>
+			
+			<input type="submit" value="Convert" name="convertButton" id="convertButtonId"><br><br>
+			
+			<label for="postfixResultId">Postfix: </label>
+			<input type="text" id="postfixResultId" name="postfixResultName" disabled><br><br>
+			
+			<label for="prefixResultId">Prefix: </label>
+			<input type="text" id="prefixResultId" name="prefixResultName" disabled><br><br>
+			
+			<label for="evaluatedResultId">Result: </label>
+			<input type="text" id="evaluatedResultId" name="evaluatedResultName" disabled><br><br>
+		</div>
+		
+		
+		
+		<script>
+		
+			//document.querySelector("#errorMessageDisplayId").style.display = "none";
+		
+			function clearEverything() {
+				document.querySelector("#expressionId").value = "";
+
+				document.querySelector("#postfixResultId").value = "";
+				document.querySelector("#prefixResultId").value = "";
+				document.querySelector("#evaluatedResultId").value = "";
+
+
+				errDiv = document.querySelector("#errorMessageDisplayId")
+				errDiv.style.display = "none";
+
+
+			}
+		
+			function placeOutput(b) {
+				document.querySelector("#expressionId").value += b.value;
+				console.log(b.value);
+			}
+
+			function backspace() {
+				expression = document.querySelector("#expressionId");
+				expression.value = expression.value.slice(0, expression.value.length - 1);
+			}
+		
+			
+			
+			document.querySelector("#convertButtonId").addEventListener("click", convert);
+			
+			
+			async function convert() {
+
+
+				document.querySelector("#postfixResultId").value = "";
+				document.querySelector("#prefixResultId").value = "";
+				document.querySelector("#evaluatedResultId").value = "";
+
+
+				expression = document.querySelector("#expressionId").value;
+				//alert(expression);
+
+				errDiv = document.querySelector("#errorMessageDisplayId")
+				errDiv.style.display = "none";
+				
+				const data = await fetchData(expression);
+
+				if (data["error"]) {
+
+					//alert("error");
+				
+;
+					errDiv.style.display = "block";
+					errDiv.textContent = data["error"];					
+				} else {
+					//alert("no error");
+					document.querySelector("#postfixResultId").value = data["postfixResult"];
+					document.querySelector("#prefixResultId").value = data["prefixResult"];
+					document.querySelector("#evaluatedResultId").value = data["evaluatedResult"];
+				}
+			}
+
+
+			
+			
+			/* Request to backend */
+			async function makeRequest(url, method, body) {
+				let headers = {
+					"X-Requested-With": "XMLHttpRequest",
+					"Content-Type": "application/json",
+				};
+
+				if (method == "post") {
+					const csrf = document.querySelector("[name=csrfmiddlewaretoken]").value;
+					headers["X-CSRFToken"] = csrf;
+				}
+
+				let response = await fetch(url, {
+					method: method,
+					headers: headers,
+					body: body,
+				});
+
+				return await response.json();
+
+			}
+
+
+			async function fetchData(exp) {
+
+				const data = await makeRequest("postfix.pythonanywhere.com", method="post", body=JSON.stringify({infix: exp}));
+
+				return data;
+
+			}
+
+		</script>
+		
+		
+		
+	</body>
+</html>
